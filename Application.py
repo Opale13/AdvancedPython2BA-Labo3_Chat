@@ -14,7 +14,7 @@ class Server:
 
         #Regex for client messages
         t1 = r"^[a-zA-Z0-9]+$"
-        t2 = r"/[a-zA-Z]+"
+        t2 = r"^/[a-zA-Z]+$"
         self.__user_pattern = re.compile(t1)
         self.__command_pattern = re.compile(t2)
         self.__clients = {}
@@ -80,13 +80,18 @@ class Server:
         client_list = ""
         for i in self.__clients:
             client_list += i + "-" + self.__clients[i][0] + "\n"
-
-        self._send(addr, client_list)
+        if len(self.__clients) != 0:
+            self._send(addr, client_list)
+        else:
+            self._send(addr, "None")
 
     def _quit(self, addr):
+        pseudo = ""
         for i in self.__clients:
-            if self.__clients[i] == addr:
-                del self.__clients[i]
+            if self.__clients[i][0] == addr[0]:
+                pseudo += i
+        self._send(addr, "Deconnexion")
+        del self.__clients[pseudo]
 
 class Client:
     def __init__(self):
@@ -95,7 +100,7 @@ class Client:
         se.bind((socket.gethostname(), 5001))
         self.__se = se
 
-        t1 = r"server\s(?P<answer>[a-zA-Z0-9\s.-]+)"
+        t1 = r"^server\s(?P<answer>[a-zA-Z0-9\s.-]+)$"
         self.__serverans = re.compile(t1)
 
         #Bind socket and regex for peer-to-peer communicatie
