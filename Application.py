@@ -4,7 +4,7 @@ import threading
 import subprocess
 import re
 
-class Serveur:
+class Server:
     def __init__(self):
         s = socket.socket()
         s.bind((socket.gethostname(), 5000))
@@ -16,6 +16,9 @@ class Serveur:
         self.__user_pattern = re.compile(t1)
         self.__command_pattern = re.compile(t2)
         self.__clients = {}
+
+        self.__handlers = {"/clients": self._clients
+                    }
 
     def run(self):
         self.__s.listen()
@@ -36,12 +39,23 @@ class Serveur:
                     sys.stdout.flush()
 
                 elif self.__command_pattern.match(data):
-                    print(data)
-                    sys.stdout.flush()
+                    if data in self.__handlers:
+                        self.__handlers[data](addr)
+
                 client.close()
 
             except OSError:
                 print('Erreur de reception')
+
+    def _send(self, addr, data):
+        cl = socket.socket()
+        cl.connect(addr)
+
+        totalsent = 0
+        while totalsent < len(data):
+            sent = cl.send(data[totalsent:])
+            totalsent += sent
+        cl.close()
 
     def _receive(self, client):
         chunks = []
@@ -51,6 +65,9 @@ class Serveur:
             chunks.append(data)
             finished = data == b''
         return b''.join(chunks)
+
+    def _clients(self, addr):
+        self._send(addr, self.__clients)
 
 class Client:
     def __init__(self):
@@ -75,7 +92,6 @@ class Client:
             sent = self.__s.send(data[totalsent:])
             totalsent += sent
         self.__s.close()
-        print("Send ok")
 
     def who(self):
         proc = subprocess.Popen(['Whoami'], stdout=subprocess.PIPE,
@@ -90,7 +106,7 @@ class Client:
         return str(user)
 
 if __name__ == '__main__':
-    if sys.argv[1] == 'serveur':
-        Serveur().run()
+    if sys.argv[1] == 'server':
+        Server().run()
     elif sys.argv[1] == 'client':
         Client().run()
