@@ -17,8 +17,7 @@ class Server:
         self.__command_pattern = re.compile(t2)
         self.__clients = {}
 
-        self.__handlers = {"/clients": self._clients
-                    }
+        self.__handlers = {"/clients": self._clients}
 
     def run(self):
         self.__s.listen()
@@ -41,7 +40,6 @@ class Server:
                 elif self.__command_pattern.match(data):
                     if data in self.__handlers:
                         self.__handlers[data](addr)
-
                 client.close()
 
             except OSError:
@@ -55,6 +53,7 @@ class Server:
         while totalsent < len(data):
             sent = cl.send(data[totalsent:])
             totalsent += sent
+        print("Send done")
         cl.close()
 
     def _receive(self, client):
@@ -67,7 +66,7 @@ class Server:
         return b''.join(chunks)
 
     def _clients(self, addr):
-        self._send(addr, self.__clients)
+        self._send(addr, "test")
 
 class Client:
     def __init__(self):
@@ -92,6 +91,9 @@ class Client:
             sent = self.__s.send(data[totalsent:])
             totalsent += sent
         self.__s.close()
+
+    def _listeningserv(self):
+        pass
 
     def who(self):
         proc = subprocess.Popen(['Whoami'], stdout=subprocess.PIPE,
