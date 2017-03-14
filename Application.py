@@ -3,8 +3,6 @@ import sys
 import threading
 import subprocess
 
-
-
 class Serveur:
     def __init__(self):
         s = socket.socket()
@@ -16,30 +14,23 @@ class Serveur:
     def run(self):
         self.__s.listen()
         self.__running = True
-        threading.Thread(target=self._addclient).start()
-
-    def _listening(self):
         while self.__running:
-            try:
-                data, address = self.__s.recv(1024)
-                dt = data.decode()
-                print(dt)
-                sys.stdout.flush()
-            except socket.timeout:
-                pass
-            except OSError:
-                return
+            self._addclient()
 
     def _addclient(self):
         while self.__running:
             client, addr = self.__s.accept()
 
             try:
-                user = self._receive(client).decode()
+                data = self._receive(client).decode()
 
-                if "/" not in user:
-                    self.__clients[user] = addr
+                if "/" not in data:
+                    self.__clients[data] = addr
                     print(self.__clients)
+                    sys.stdout.flush()
+
+                else:
+                    print(data)
                     sys.stdout.flush()
                 client.close()
 
@@ -57,14 +48,11 @@ class Serveur:
 
 class Client:
     def __init__(self):
-        s = socket.socket()
-        s.settimeout(0.5)
-        self.__s = s
+        self.__s = socket.socket()
 
     def run(self):
         data = self.who().encode()
         self._sendserv(data)
-
 
         self.__running = True
         while self.__running:
@@ -74,12 +62,14 @@ class Client:
             self._sendserv(dt)
 
     def _sendserv(self, data):
+        self.__s = socket.socket()
         self.__s.connect((socket.gethostname(), 5000))
         totalsent = 0
         while totalsent < len(data):
             sent = self.__s.send(data[totalsent:])
             totalsent += sent
         self.__s.close()
+        print("Send ok")
 
     def who(self):
         proc = subprocess.Popen(['Whoami'], stdout=subprocess.PIPE,
