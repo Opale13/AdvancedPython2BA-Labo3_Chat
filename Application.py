@@ -2,6 +2,7 @@ import socket
 import sys
 import threading
 import subprocess
+import re
 
 class Serveur:
     def __init__(self):
@@ -9,27 +10,32 @@ class Serveur:
         s.bind((socket.gethostname(), 5000))
         self.__s = s
         print("Ecoute sur {}:{}".format(socket.gethostname(), 5000))
+
+        t1 = r"^[a-zA-Z0-9]+$"
+        t2 = r"/[a-zA-Z]+"
+        self.__user_pattern = re.compile(t1)
+        self.__command_pattern = re.compile(t2)
         self.__clients = {}
 
     def run(self):
         self.__s.listen()
         self.__running = True
         while self.__running:
-            self._addclient()
+            self._listening()
 
-    def _addclient(self):
+    def _listening(self):
         while self.__running:
             client, addr = self.__s.accept()
 
             try:
                 data = self._receive(client).decode()
 
-                if "/" not in data:
+                if self.__user_pattern.match(data):
                     self.__clients[data] = addr
                     print(self.__clients)
                     sys.stdout.flush()
 
-                else:
+                elif self.__command_pattern.match(data):
                     print(data)
                     sys.stdout.flush()
                 client.close()
