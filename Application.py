@@ -3,6 +3,8 @@ import sys
 import threading
 import subprocess
 
+
+
 class Serveur:
     def __init__(self):
         s = socket.socket()
@@ -13,23 +15,36 @@ class Serveur:
 
     def run(self):
         self.__s.listen()
-        handlers = {"/client": self._clients}
+        self.__running = True
+        threading.Thread(target=self._addclient).start()
 
-        while True:
-            client, addr = self.__s.accept()
+    def _listening(self):
+        while self.__running:
             try:
-                data = self._receive(client).decode()
+                data, address = self.__s.recv(1024)
+                dt = data.decode()
+                print(dt)
+                sys.stdout.flush()
+            except socket.timeout:
+                pass
+            except OSError:
+                return
 
-                if "/" not in data:
-                    self.__clients[data] = addr
+    def _addclient(self):
+        while self.__running:
+            client, addr = self.__s.accept()
+
+            try:
+                user = self._receive(client).decode()
+
+                if "/" not in user:
+                    self.__clients[user] = addr
                     print(self.__clients)
-                else:
-                    pass
+                    sys.stdout.flush()
+                client.close()
+
             except OSError:
                 print('Erreur de reception')
-
-    def _clients(self):
-        print(self.__clients)
 
     def _receive(self, client):
         chunks = []
@@ -40,20 +55,31 @@ class Serveur:
             finished = data == b''
         return b''.join(chunks)
 
-
 class Client:
     def __init__(self):
         s = socket.socket()
+        s.settimeout(0.5)
         self.__s = s
 
     def run(self):
-        self.__s.connect((socket.gethostname(), 5000))
         data = self.who().encode()
+        self._sendserv(data)
 
+
+        self.__running = True
+        while self.__running:
+            line = sys.stdin.readline().rstrip() + ' '
+            command = line[:line.index(' ')]
+            dt = command.encode()
+            self._sendserv(dt)
+
+    def _sendserv(self, data):
+        self.__s.connect((socket.gethostname(), 5000))
         totalsent = 0
         while totalsent < len(data):
             sent = self.__s.send(data[totalsent:])
             totalsent += sent
+        self.__s.close()
 
     def who(self):
         proc = subprocess.Popen(['Whoami'], stdout=subprocess.PIPE,
