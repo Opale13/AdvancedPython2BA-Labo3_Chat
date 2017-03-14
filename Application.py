@@ -42,13 +42,15 @@ class Server:
                         self.__handlers[data](addr)
                 client.close()
 
-            except OSError:
+            except OSError as e:
+                print(e)
                 print('Erreur de reception')
 
-    def _send(self, addr, data):
+    def _send(self, addr, dt):
         cl = socket.socket()
-        cl.connect(addr)
+        cl.connect((addr[0], 5001))
 
+        data = dt.encode()
         totalsent = 0
         while totalsent < len(data):
             sent = cl.send(data[totalsent:])
@@ -66,13 +68,20 @@ class Server:
         return b''.join(chunks)
 
     def _clients(self, addr):
-        self._send(addr, "test")
+        client_list = ""
+        for i in self.__clients:
+            client_list += i + " " + self.__clients[i][0] + "\n"
+
+        self._send(addr, client_list)
 
 class Client:
     def __init__(self):
-        self.__s = socket.socket()
+        se = socket.socket()
+        se.bind((socket.gethostname(), 5001))
+        self.__se = se
 
     def run(self):
+        self.__se.listen()
         data = self.who().encode()
         self._sendserv(data)
 
@@ -82,10 +91,12 @@ class Client:
             command = line[:line.index(' ')]
             dt = command.encode()
             self._sendserv(dt)
+            self._listeningserv()
 
     def _sendserv(self, data):
         self.__s = socket.socket()
         self.__s.connect((socket.gethostname(), 5000))
+
         totalsent = 0
         while totalsent < len(data):
             sent = self.__s.send(data[totalsent:])
@@ -93,7 +104,9 @@ class Client:
         self.__s.close()
 
     def _listeningserv(self):
-        pass
+        server, addr = self.__se.accept()
+        print("[Server] ", self._receive(server).decode())
+        server.close()
 
     def who(self):
         proc = subprocess.Popen(['Whoami'], stdout=subprocess.PIPE,
@@ -106,6 +119,15 @@ class Client:
             user = spl[0]
 
         return str(user)
+
+    def _receive(self, client):
+        chunks = []
+        finished = False
+        while not finished:
+            data = client.recv(1024)
+            chunks.append(data)
+            finished = data == b''
+        return b''.join(chunks)
 
 if __name__ == '__main__':
     if sys.argv[1] == 'server':
