@@ -19,8 +19,7 @@ class Server:
         self.__command_pattern = re.compile(t2)
         self.__clients = {}
 
-        self.__handlers = {"/clients": self._clients,
-                           "/quit": self._quit}
+        self.__handlers = {"/clients": self._clients}
 
     def run(self):
         self.__s.listen()
@@ -79,19 +78,21 @@ class Server:
         """Sends a list of contacts"""
         client_list = ""
         for i in self.__clients:
-            client_list += i + " " + self.__clients[i][0] + "\n"
+            client_list += i + "-" + self.__clients[i][0] + "\n"
 
         self._send(addr, client_list)
 
 class Client:
     def __init__(self):
-        #Bind socket for server answer
+        #Bind socket and regex for server answer
         se = socket.socket()
         se.bind((socket.gethostname(), 5001))
         self.__se = se
 
-        t1 = r"server\s(?<answer>[a-zA-Z0-9]+)"
+        t1 = r"server\s(?P<answer>[a-zA-Z0-9\s.-]+)"
         self.__serverans = re.compile(t1)
+
+        #Bind socket and regex for peer-to-peer communicatie
 
     def run(self):
         self.__se.listen()
@@ -103,7 +104,8 @@ class Client:
             line = sys.stdin.readline().rstrip() + ' '
             command = line[:line.index(' ')]
             dt = command.encode()
-            self._sendserv(dt)
+            if command == "/clients" or command == "/quit":
+                self._sendserv(dt)
             self._listeningserv()
 
     def _sendserv(self, data):
@@ -123,7 +125,8 @@ class Client:
         try:
             data = self._receive(server).decode()
             if self.__serverans.match(data):
-                print("[Server] ", self.__serverans.group("answer"))
+                m = self.__serverans.match(data)
+                print("[Server] ", m.group("answer"))
             server.close()
 
         except OSError as e:
