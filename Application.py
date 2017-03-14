@@ -19,7 +19,8 @@ class Server:
         self.__command_pattern = re.compile(t2)
         self.__clients = {}
 
-        self.__handlers = {"/clients": self._clients}
+        self.__handlers = {"/clients": self._clients,
+                           "/quit": self._quit}
 
     def run(self):
         self.__s.listen()
@@ -81,6 +82,11 @@ class Server:
             client_list += i + "-" + self.__clients[i][0] + "\n"
 
         self._send(addr, client_list)
+
+    def _quit(self, addr):
+        for i in self.__clients:
+            if self.__clients[i] == addr:
+                del self.__clients[i]
 
 class Client:
     def __init__(self):
