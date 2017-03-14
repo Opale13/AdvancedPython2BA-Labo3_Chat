@@ -8,19 +8,28 @@ class Serveur:
         s = socket.socket()
         s.bind((socket.gethostname(), 5000))
         self.__s = s
-        print("Ecoute sur {}:{}".format(socket.gethostname(),
-                                        5000))
+        print("Ecoute sur {}:{}".format(socket.gethostname(), 5000))
         self.__clients = {}
 
     def run(self):
         self.__s.listen()
+        handlers = {"/client": self._clients}
+
         while True:
             client, addr = self.__s.accept()
             try:
-                self.__clients[self._receive(client).decode()] = addr
-                print(self.__clients)
+                data = self._receive(client).decode()
+
+                if "/" not in data:
+                    self.__clients[data] = addr
+                    print(self.__clients)
+                else:
+                    pass
             except OSError:
                 print('Erreur de reception')
+
+    def _clients(self):
+        print(self.__clients)
 
     def _receive(self, client):
         chunks = []
