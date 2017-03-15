@@ -31,9 +31,9 @@ class Server:
     def _listening(self):
         """Listenning if the client sends a message"""
         while self.__running:
-            client, addr = self.__s.accept()
 
             try:
+                client, addr = self.__s.accept()
                 data = self._receive(client).decode()
                 #Pseudo message
                 if self.__user_pattern.match(data):
@@ -47,6 +47,9 @@ class Server:
                     else:
                         self._send(addr, "Commande inconnue")
                 client.close()
+
+            except socket.timeout:
+                pass
 
             except OSError as e:
                 print(e)
@@ -105,8 +108,16 @@ class Client:
         self.__serverans = re.compile(t1)
 
         #Bind socket and regex for peer-to-peer communicatie
+        ptp = socket.socket(type=socket.SOCK_DGRAM)
+        ptp.settimeout(0.5)
+        ptp.bind((socket.gethostname(), 4000))
+        self.__ptp = ptp
 
-        self.__handlers = {"/join": ""}
+        t2 = r"^[0-9]+[a-zA-Z0-9][0-9]+[a-zA-Z]+$"
+        self.__ptpreg = re.compile(t2)
+
+        self.__handlers = {"/join": self._join,
+                           "/send": self._send}
 
     def run(self):
         self.__se.listen()
@@ -117,11 +128,19 @@ class Client:
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
             command = line[:line.index(' ')]
+            param = line[line.index(' ') + 1:].rstrip()
+
             dt = command.encode()
+
             if command == "/clients" or command == "/quit":
                 self._sendserv(dt)
+
             elif command in self.__handlers:
-                print("trol")
+                try:
+                    self.__handlers[command]() if param == '' else self.__handlers[command](param)
+                except:
+                    print("Erreur lors de l'exécution de la commande.")
+
             self._listeningserv()
 
     def _sendserv(self, data):
@@ -176,6 +195,26 @@ class Client:
             chunks.append(data)
             finished = data == b''
         return b''.join(chunks)
+
+    def _join(self, param):
+        try:
+            self.__address = (param, 4000)
+            print('Connecté à {}:{}'.format(*self.__address))
+
+        except OSError:
+            print("Erreur lors de la connexion")
+
+    def _send(self, param):
+        if self.__address is not None:
+            try:
+                token = str(len(self.who())) + self.who() + str(len(param)) + param
+                message = token.encode()
+                totalsent = 0
+                while totalsent < len(message):
+                    sent = self.__ptp.sendto(message[totalsent:], self.__address)
+                    totalsent += sent
+            except:
+                print("Erreur lors de l'envoie du message")
 
 if __name__ == '__main__':
     if sys.argv[1] == 'server':
