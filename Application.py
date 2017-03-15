@@ -25,13 +25,11 @@ class Server:
     def run(self):
         self.__s.listen()
         self.__running = True
-        while self.__running:
-            self._listening()
+        threading.Thread(target=self._listening()).start()
 
     def _listening(self):
         """Listenning if the client sends a message"""
         while self.__running:
-
             try:
                 client, addr = self.__s.accept()
                 data = self._receive(client).decode()
@@ -114,7 +112,7 @@ class Client:
         self.__ptp = ptp
         print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
-        t2 = r"^[0-9]+[a-zA-Z0-9][0-9]+[a-zA-Z]+$"
+        t2 = r"^[0-9]+[a-zA-Z0-9.-][0-9]+[a-zA-Z.]+$"
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
@@ -126,6 +124,7 @@ class Client:
         self._sendserv(data)
 
         self.__running = True
+
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
             command = line[:line.index(' ')]
@@ -143,6 +142,7 @@ class Client:
                     print("Erreur lors de l'exécution de la commande.")
 
             self._listeningserv()
+            self._listening()
 
     def _sendserv(self, data):
         """Send commands to the server """
@@ -173,6 +173,26 @@ class Client:
         except OSError as e:
             print(e)
             print('Erreur de reception')
+
+    def _listening(self):
+        print("ok")
+        while self.__running:
+            try:
+                print("pass")
+                data, address = self.__ptp.recvfrom(1024)
+
+                dt = data.decode()
+                if self.__ptpreg.match(dt):
+                    print(dt)
+                    sys.stdout.flush()
+                else:
+                    print("Not match")
+
+            except socket.timeout:
+                pass
+
+            except OSError:
+                print("error")
 
     def who(self):
         """Say who I am"""
