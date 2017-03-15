@@ -97,6 +97,7 @@ class Client:
     def __init__(self):
         #Bind socket and regex for server answer
         se = socket.socket()
+        se.settimeout(0.5)
         se.bind((socket.gethostname(), 5001))
         self.__se = se
 
@@ -104,6 +105,8 @@ class Client:
         self.__serverans = re.compile(t1)
 
         #Bind socket and regex for peer-to-peer communicatie
+
+        self.__handlers = {"/join": ""}
 
     def run(self):
         self.__se.listen()
@@ -117,6 +120,8 @@ class Client:
             dt = command.encode()
             if command == "/clients" or command == "/quit":
                 self._sendserv(dt)
+            elif command in self.__handlers:
+                print("trol")
             self._listeningserv()
 
     def _sendserv(self, data):
@@ -132,13 +137,18 @@ class Client:
 
     def _listeningserv(self):
         """Listening to server answer"""
-        server, addr = self.__se.accept()
         try:
+            server, addr = self.__se.accept()
+
             data = self._receive(server).decode()
             if self.__serverans.match(data):
                 m = self.__serverans.match(data)
                 print("[Server] ", m.group("answer"))
+                sys.stdout.flush()
             server.close()
+
+        except socket.timeout:
+            pass
 
         except OSError as e:
             print(e)
