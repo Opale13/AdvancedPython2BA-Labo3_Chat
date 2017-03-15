@@ -112,6 +112,7 @@ class Client:
         ptp.settimeout(0.5)
         ptp.bind((socket.gethostname(), 4000))
         self.__ptp = ptp
+        print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
         t2 = r"^[0-9]+[a-zA-Z0-9][0-9]+[a-zA-Z]+$"
         self.__ptpreg = re.compile(t2)
