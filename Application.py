@@ -228,7 +228,7 @@ class Client:
         if self.__address is not None:
             try:
                 token = str(len(self.who())) + self.who() + str(len(param)) + param
-                print(token)
+                print("test ", token)
                 message = token.encode()
                 totalsent = 0
                 while totalsent < len(message):
