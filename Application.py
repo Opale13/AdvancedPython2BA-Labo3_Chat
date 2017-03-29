@@ -25,13 +25,11 @@ class Server:
     def run(self):
         self.__s.listen()
         self.__running = True
-        while self.__running:
-            self._listening()
+        threading.Thread(target=self._listening()).start()
 
     def _listening(self):
         """Listenning if the client sends a message"""
         while self.__running:
-
             try:
                 client, addr = self.__s.accept()
                 data = self._receive(client).decode()
@@ -126,6 +124,8 @@ class Client:
         self._sendserv(data)
 
         self.__running = True
+        threading.Thread(target=self._listeningserv()).start()
+
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
             command = line[:line.index(' ')]
@@ -142,12 +142,10 @@ class Client:
                 except:
                     print("Erreur lors de l'exécution de la commande.")
 
-            self._listeningserv()
-
     def _sendserv(self, data):
         """Send commands to the server """
         self.__s = socket.socket()
-        self.__s.connect((socket.gethostname(), 5000))
+        self.__s.connect(("192.168.0.7", 5000))
 
         totalsent = 0
         while totalsent < len(data):
@@ -217,8 +215,5 @@ class Client:
             except:
                 print("Erreur lors de l'envoie du message")
 
-if __name__ == '__main__':
-    if sys.argv[1] == 'server':
-        Server().run()
-    elif sys.argv[1] == 'client':
-        Client().run()
+
+Client().run()
