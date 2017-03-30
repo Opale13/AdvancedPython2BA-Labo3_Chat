@@ -112,7 +112,7 @@ class Client:
         self.__ptp = ptp
         print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
-        t2 = r"^[0-9]+[a-zA-Z0-9][0-9]+[a-zA-Z]+$"
+        t2 = r"^[0-9]+[a-zA-Z0-9.-][0-9]+[a-zA-Z.]+$"
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
@@ -124,7 +124,11 @@ class Client:
         self._sendserv(data)
 
         self.__running = True
+<<<<<<< HEAD
         threading.Thread(target=self._listeningserv()).start()
+=======
+        threading.Thread(target=self._listening()).start()
+>>>>>>> a5a0c23f0935ccd0579cd1ced8423cc0e1b4fa41
 
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
@@ -139,7 +143,8 @@ class Client:
             elif command in self.__handlers:
                 try:
                     self.__handlers[command]() if param == '' else self.__handlers[command](param)
-                except:
+                except Exception as e:
+                    print(e)
                     print("Erreur lors de l'exécution de la commande.")
 
     def _sendserv(self, data):
@@ -171,6 +176,24 @@ class Client:
         except OSError as e:
             print(e)
             print('Erreur de reception')
+
+    def _listening(self):
+        try:
+
+            data, address = self.__ptp.recvfrom(1024)
+            dt = data.decode()
+
+            if self.__ptpreg.match(dt):
+                print(dt)
+                sys.stdout.flush()
+            else:
+                print("Not match")
+
+        except socket.timeout:
+            pass
+
+        except OSError:
+            print("error")
 
     def who(self):
         """Say who I am"""
@@ -207,12 +230,14 @@ class Client:
         if self.__address is not None:
             try:
                 token = str(len(self.who())) + self.who() + str(len(param)) + param
+                print(token)
                 message = token.encode()
                 totalsent = 0
                 while totalsent < len(message):
                     sent = self.__ptp.sendto(message[totalsent:], self.__address)
                     totalsent += sent
-            except:
+            except Exception as e:
+                print(e)
                 print("Erreur lors de l'envoie du message")
 
 
