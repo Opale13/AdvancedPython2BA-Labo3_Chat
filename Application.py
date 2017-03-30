@@ -124,7 +124,7 @@ class Client:
         self._sendserv(data)
 
         self.__running = True
-        threading.Thread(target=self._listening()).start()
+        threading.Thread(target=self._listening).start()
 
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
