@@ -114,7 +114,7 @@ class Client:
         self.__ptp = ptp
         print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
-        t2 = r"^[0-9]+[a-zA-Z0-9.-][0-9]+[a-zA-Z.]+$"
+        t2 = r"([0-9]+) ([a-zA-Z0-9]+) ([0-9]+) ([0-9a-zA-Z]+)"
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
@@ -190,9 +190,11 @@ class Client:
                 data, address = self.__ptp.recvfrom(1024)
                 dt = data.decode()
 
-                if self.__ptpreg.match(dt):
-                    print(dt)
-                    sys.stdout.flush()
+                m = self.__ptpreg.match(dt)
+
+                if len(m.group(2)) == int(m.group(1)) and len(m.group(4)) == int(m.group(3)):
+                    print("[" + m.group(2) + "] " + m.group(4))
+
                 else:
                     print("Not match")
 
