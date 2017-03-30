@@ -20,12 +20,12 @@ class Server:
         self.__clients = {}
 
         self.__handlers = {"/clients": self._clients,
-                           "/quit": self._quit}
+                           "/exit": self._exit}
 
     def run(self):
         self.__s.listen()
         self.__running = True
-        threading.Thread(target=self._listening()).start()
+        threading.Thread(target=self._listening).start()
 
     def _listening(self):
         """Listenning if the client sends a message"""
@@ -86,13 +86,15 @@ class Server:
         else:
             self._send(addr, "None")
 
-    def _quit(self, addr):
+    def _exit(self, addr):
+        """Remove the user of the list"""
         pseudo = ""
         for i in self.__clients:
             if self.__clients[i][0] == addr[0]:
                 pseudo += i
         self._send(addr, "Deconnexion")
         del self.__clients[pseudo]
+        print(self.__clients)
 
 class Client:
     def __init__(self):
@@ -112,11 +114,12 @@ class Client:
         self.__ptp = ptp
         print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
-        t2 = r"^[0-9]+[a-zA-Z0-9.-][0-9]+[a-zA-Z.]+$"
+        t2 = r"^([0-9]+) ([a-zA-Z0-9]+) ([0-9]+) ([0-9a-zA-Z\s\?\.\\\!\,\:/\^\$\;]+)$"
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
-                           "/send": self._send}
+                           "/send": self._send,
+                           "/quit": self._quit}
 
     def run(self):
         self.__se.listen()
@@ -125,10 +128,14 @@ class Client:
 
         self.__running = True
 <<<<<<< HEAD
+<<<<<<< HEAD
         threading.Thread(target=self._listeningserv()).start()
 =======
         threading.Thread(target=self._listening()).start()
 >>>>>>> a5a0c23f0935ccd0579cd1ced8423cc0e1b4fa41
+=======
+        threading.Thread(target=self._listening).start()
+>>>>>>> b99d7d2b8d2efb694c1d848148de33c40bbb43a5
 
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
@@ -137,12 +144,18 @@ class Client:
 
             dt = command.encode()
 
-            if command == "/clients" or command == "/quit":
+            if command == "/clients" or command == "/exit":
+                if command == "/exit":
+                    self.__address = None
+                    self.__running = False
+                    self.__ptp.close()
+
                 self._sendserv(dt)
 
             elif command in self.__handlers:
                 try:
                     self.__handlers[command]() if param == '' else self.__handlers[command](param)
+                    
                 except Exception as e:
                     print(e)
                     print("Erreur lors de l'exécution de la commande.")
@@ -178,22 +191,24 @@ class Client:
             print('Erreur de reception')
 
     def _listening(self):
-        try:
+        while self.__running:
+            try:
+                data, address = self.__ptp.recvfrom(1024)
+                dt = data.decode()
 
-            data, address = self.__ptp.recvfrom(1024)
-            dt = data.decode()
+                m = self.__ptpreg.match(dt)
 
-            if self.__ptpreg.match(dt):
-                print(dt)
-                sys.stdout.flush()
-            else:
-                print("Not match")
+                if len(m.group(2)) == int(m.group(1)) and len(m.group(4)) == int(m.group(3)):
+                    print("[" + m.group(2) + "] " + m.group(4))
 
-        except socket.timeout:
-            pass
+                else:
+                    print("Not match")
 
-        except OSError:
-            print("error")
+            except socket.timeout:
+                pass
+
+            except OSError:
+                return
 
     def who(self):
         """Say who I am"""
@@ -219,6 +234,7 @@ class Client:
         return b''.join(chunks)
 
     def _join(self, param):
+        """Join a user with his ip"""
         try:
             self.__address = (param, 4000)
             print('Connecté à {}:{}'.format(*self.__address))
@@ -227,9 +243,11 @@ class Client:
             print("Erreur lors de la connexion")
 
     def _send(self, param):
+        """Sends a message in peer to peer"""
         if self.__address is not None:
             try:
-                token = str(len(self.who())) + self.who() + str(len(param)) + param
+                token = str(len(self.who())) + " " + self.who() + " " + str(len(param)) + " " \
+                        + param
                 print(token)
                 message = token.encode()
                 totalsent = 0
@@ -240,5 +258,18 @@ class Client:
                 print(e)
                 print("Erreur lors de l'envoie du message")
 
+<<<<<<< HEAD
 
 Client().run()
+=======
+    def _quit(self):
+        """Leaves the peer to peer connection"""
+        print("Connexion rompue")
+        self.__address = None
+
+if __name__ == '__main__':
+    if sys.argv[1] == 'server':
+        Server().run()
+    elif sys.argv[1] == 'client':
+        Client().run()
+>>>>>>> b99d7d2b8d2efb694c1d848148de33c40bbb43a5
