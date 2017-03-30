@@ -17,8 +17,8 @@ Communication protocol server-client/client-server:
 The communication is a TCP.
 1) Data frame server-client:
 The server sends the data frame "server message" on the port 5001 of the client.
-2) Client-serer:
-The client sends a message on the port 500 of the server.
+2) Client-server:
+The client sends a message on the port 5000 of the server.
 
 Communication protocol client-client:
 The communication is UDP.
