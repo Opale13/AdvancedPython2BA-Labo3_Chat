@@ -114,7 +114,7 @@ class Client:
         self.__ptp = ptp
         print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
-        t2 = r"^([0-9]+) ([a-zA-Z0-9]+) ([0-9]+) ([0-9a-zA-Z]+)$"
+        t2 = r"^([0-9]+) ([a-zA-Z0-9]+) ([0-9]+) ([0-9a-zA-Z\s\?\.\\\!\,\:/\^\$\;]+)$"
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
@@ -242,7 +242,7 @@ class Client:
             try:
                 token = str(len(self.who())) + " " + self.who() + " " + str(len(param)) + " " \
                         + param
-                
+                print(token)
                 message = token.encode()
                 totalsent = 0
                 while totalsent < len(message):
