@@ -25,7 +25,7 @@ class Server:
     def run(self):
         self.__s.listen()
         self.__running = True
-        threading.Thread(target=self._listening()).start()
+        threading.Thread(target=self._listening).start()
 
     def _listening(self):
         """Listenning if the client sends a message"""
@@ -114,7 +114,7 @@ class Client:
         self.__ptp = ptp
         print("Ecoute sur {}:{}".format(socket.gethostname(), 4000))
 
-        t2 = r"([0-9]+) ([a-zA-Z0-9]+) ([0-9]+) ([0-9a-zA-Z]+)"
+        t2 = r"^([0-9]+) ([a-zA-Z0-9]+) ([0-9]+) ([0-9a-zA-Z]+)$"
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
@@ -240,7 +240,9 @@ class Client:
         """Sends a message in peer to peer"""
         if self.__address is not None:
             try:
-                token = str(len(self.who())) + self.who() + str(len(param)) + param
+                token = str(len(self.who())) + " " + self.who() + " " + str(len(param)) + " " \
+                        + param
+                
                 message = token.encode()
                 totalsent = 0
                 while totalsent < len(message):
