@@ -20,7 +20,7 @@ class Server:
         self.__clients = {}
 
         self.__handlers = {"/clients": self._clients,
-                           "/quit": self._quit}
+                           "/exit": self._exit}
 
     def run(self):
         self.__s.listen()
@@ -86,13 +86,14 @@ class Server:
         else:
             self._send(addr, "None")
 
-    def _quit(self, addr):
+    def _exit(self, addr):
         pseudo = ""
         for i in self.__clients:
             if self.__clients[i][0] == addr[0]:
                 pseudo += i
         self._send(addr, "Deconnexion")
         del self.__clients[pseudo]
+        print(self.__clients)
 
 class Client:
     def __init__(self):
@@ -116,7 +117,8 @@ class Client:
         self.__ptpreg = re.compile(t2)
 
         self.__handlers = {"/join": self._join,
-                           "/send": self._send}
+                           "/send": self._send,
+                           "/quit": self._quit}
 
     def run(self):
         self.__se.listen()
@@ -124,7 +126,7 @@ class Client:
         self._sendserv(data)
 
         self.__running = True
-        threading.Thread(target=self._listening()).start()
+        threading.Thread(target=self._listening).start()
 
         while self.__running:
             line = sys.stdin.readline().rstrip() + ' '
@@ -133,12 +135,18 @@ class Client:
 
             dt = command.encode()
 
-            if command == "/clients" or command == "/quit":
+            if command == "/clients" or command == "/exit":
+                if command == "/exit":
+                    self.__address = None
+                    self.__running = False
+                    self.__ptp.close()
+
                 self._sendserv(dt)
 
             elif command in self.__handlers:
                 try:
                     self.__handlers[command]() if param == '' else self.__handlers[command](param)
+                    
                 except Exception as e:
                     print(e)
                     print("Erreur lors de l'exécution de la commande.")
@@ -176,22 +184,22 @@ class Client:
             print('Erreur de reception')
 
     def _listening(self):
-        try:
+        while self.__running:
+            try:
+                data, address = self.__ptp.recvfrom(1024)
+                dt = data.decode()
 
-            data, address = self.__ptp.recvfrom(1024)
-            dt = data.decode()
+                if self.__ptpreg.match(dt):
+                    print(dt)
+                    sys.stdout.flush()
+                else:
+                    print("Not match")
 
-            if self.__ptpreg.match(dt):
-                print(dt)
-                sys.stdout.flush()
-            else:
-                print("Not match")
+            except socket.timeout:
+                pass
 
-        except socket.timeout:
-            pass
-
-        except OSError:
-            print("error")
+            except OSError:
+                return
 
     def who(self):
         """Say who I am"""
@@ -228,7 +236,6 @@ class Client:
         if self.__address is not None:
             try:
                 token = str(len(self.who())) + self.who() + str(len(param)) + param
-                print("test ", token)
                 message = token.encode()
                 totalsent = 0
                 while totalsent < len(message):
@@ -237,6 +244,10 @@ class Client:
             except Exception as e:
                 print(e)
                 print("Erreur lors de l'envoie du message")
+
+    def _quit(self):
+
+        self.__address = None
 
 if __name__ == '__main__':
     if sys.argv[1] == 'server':
