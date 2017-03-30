@@ -87,6 +87,7 @@ class Server:
             self._send(addr, "None")
 
     def _exit(self, addr):
+        """Remove the user of the list"""
         pseudo = ""
         for i in self.__clients:
             if self.__clients[i][0] == addr[0]:
@@ -225,6 +226,7 @@ class Client:
         return b''.join(chunks)
 
     def _join(self, param):
+        """Join a user with his ip"""
         try:
             self.__address = (param, 4000)
             print('Connecté à {}:{}'.format(*self.__address))
@@ -233,6 +235,7 @@ class Client:
             print("Erreur lors de la connexion")
 
     def _send(self, param):
+        """Sends a message in peer to peer"""
         if self.__address is not None:
             try:
                 token = str(len(self.who())) + self.who() + str(len(param)) + param
@@ -246,7 +249,8 @@ class Client:
                 print("Erreur lors de l'envoie du message")
 
     def _quit(self):
-
+        """Leaves the peer to peer connection"""
+        print("Connexion rompue")
         self.__address = None
 
 if __name__ == '__main__':
