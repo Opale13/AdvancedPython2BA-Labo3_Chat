@@ -1,3 +1,5 @@
+#author: Kirstein Julien, Merel Ludovic
+
 import socket
 import sys
 import threading
