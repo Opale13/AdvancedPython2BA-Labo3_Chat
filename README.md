@@ -1,15 +1,15 @@
 Kirstein Julien & Merel Ludovic
 
-Hello, to use our application, it is necessary:
+Hello, to use our application, it is necessary to:
 1) Run the application with "server" as argument in a command prompt.
 2) Run the application with "client" as argument in another command prompt.
 
 In the client part, u can use two commands to communicate with the server:
-1) /clients : the server will give you users logged in with their ip adress.
+1) /clients : the server will give you all users logged in with their ip adress.
 2) /exit : you will be disconnected from the server.
 
 In the same part, u can use commands for communicate with another client:
-1) /join [ip] : Allows to connect to another client with its ip address.
+1) /join [ip] : Allows you to connect you to another client with its ip address.
 2) /send [message] : Sends a message to the person.
 3) /quit : Cuts the connection
 
